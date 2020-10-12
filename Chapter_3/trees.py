@@ -107,7 +107,7 @@ def create_tree(data_set, labels):
     class_list = [example[-1] for example in data_set]  # class_list为类标签
     if class_list.count(class_list[0]) == len(class_list):  # class_list中仅剩唯一的类标签，可直接返回该标签
         return class_list[0]
-    if len(data_set[0]) == 1:  # 若仅剩最后一个标签了，采用多数表决法，选择数量最多的类标签返回
+    if len(data_set[0]) == 1:  # 还有多个类标签，但是仅剩最后一个特征了，采用多数表决法，选择数量最多的类标签返回
         return majority_cnt(class_list)
     # 准备递归
     best_feat = choose_best_feature_to_split(data_set)  # 选出最优特征
@@ -130,5 +130,56 @@ def test_create_tree():
     print my_tree
 
 
+# 3-3-1 使用决策树的分类函数（分类器）
+def classify(input_tree, feat_labels, test_vec):    # feat_labels中为特征名，test_vec中为对应特征的特征值
+    # 该函数会被递归调用，返回值即找到的测试样本所属类标签
+    first_str = input_tree.keys()[0]    # first_str为当前树的根（特征）
+    second_dict = input_tree[first_str]     # second_dict的keys要么是当前树的根（特征）的特征值，要么就是特征
+    test_vec_feat_val = test_vec[feat_labels.index(first_str)]  # test_vec_feat_val为测试样本中（当前树的根（特征））的特征值
+    for key in second_dict.keys():  # key为当前树的根（特征）的所有可能的特征值
+        # 广度遍历
+        if test_vec_feat_val == key:
+            # 找到了对应的子树，测试样本中的test_vec_feat_val等于某特征值时
+            if type(second_dict[key]).__name__ == 'dict':
+                # 还没有匹配到决策树的叶子节点，还需递归匹配
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                # 匹配到了叶子节点，叶子节点的标签即为该测试样本的类标签
+                class_label = second_dict[key]
+    return class_label
+
+
+# 测试使用决策树的分类器函数
+def test_classify():
+    import treePlotter
+    my_dat, labels = create_data_set()
+    print labels
+    my_tree = treePlotter.retrieve_tree(0)
+    print my_tree
+    print classify(my_tree, labels, [1, 0])
+    print classify(my_tree, labels, [1, 1])
+
+
+# 3-3-2 为了提高效率，将决策树保存至硬盘中，进而避免在每次分类时调用已构造好的决策树
+def store_tree(input_tree, filename):
+    import pickle
+    with open(filename, "w") as f:
+        pickle.dump(input_tree, f)
+
+
+def load_tree(filename):
+    import pickle
+    with open(filename, "r") as f:
+        return pickle.load(f)
+
+
+# 测试序列化决策树
+def test_store_load_tree():
+    import treePlotter
+    my_tree = treePlotter.retrieve_tree(0)
+    store_tree(my_tree, "classifierStorage.txt")
+    print load_tree("classifierStorage.txt")
+
+
 if __name__ == '__main__':
-    test_create_tree()
+    test_store_load_tree()
