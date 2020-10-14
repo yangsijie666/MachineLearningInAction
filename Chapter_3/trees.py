@@ -181,5 +181,16 @@ def test_store_load_tree():
     print load_tree("classifierStorage.txt")
 
 
+# 测试眼镜分类
+def classify_lenses():
+    with open("lenses.txt", "r") as f:
+        lenses = [inst.strip().split('\t') for inst in f.readlines()]   # 一行为一个样本（特征、类标签）
+        lenses_labels = ["age", "prescript", "astigmatic", "testRate"]  # 特征标签
+        lenses_tree = create_tree(lenses, lenses_labels)
+        print lenses_tree
+        import treePlotter
+        treePlotter.create_plot(lenses_tree)
+
+
 if __name__ == '__main__':
-    test_store_load_tree()
+    classify_lenses()
